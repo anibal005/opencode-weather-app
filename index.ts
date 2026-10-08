@@ -12,6 +12,7 @@ import {
   printTemperature,
 } from "./src/ui.ts";
 import type { City, Config } from "./src/types.ts";
+import { cyan, green, red } from "./src/colors.ts";
 
 // En desarrollo import.meta.dir es la raíz del proyecto. En el binario
 // compilado apunta al bundle interno de Bun, así que usamos la carpeta
@@ -42,7 +43,7 @@ function parseIndex(input: string, max: number): number | null {
 
 async function showDefaultCity(config: Config): Promise<void> {
   if (!config.defaultCity) {
-    console.log("  No hay ciudad default. Usa la opción 5 para establecer una.");
+    console.log(`  ${red("No hay ciudad default. Usa la opción 5 para establecer una.")}`);
     return;
   }
   try {
@@ -55,7 +56,7 @@ async function showDefaultCity(config: Config): Promise<void> {
 
 async function showAllCities(config: Config): Promise<void> {
   if (config.cities.length === 0) {
-    console.log("  No hay ciudades registradas. Usa la opción 3 para agregar una.");
+    console.log(`  ${red("No hay ciudades registradas. Usa la opción 3 para agregar una.")}`);
     return;
   }
   for (const city of config.cities) {
@@ -69,15 +70,15 @@ async function showAllCities(config: Config): Promise<void> {
 }
 
 async function searchAndAddCity(config: Config): Promise<void> {
-  const query = await ask("  Nombre de la ciudad: ");
+  const query = await ask(`  ${cyan("Nombre de la ciudad: ")}`);
   if (!query) {
-    console.log("  Debes ingresar un nombre.");
+    console.log(`  ${red("Debes ingresar un nombre.")}`);
     return;
   }
 
   const city = await geocode(query);
   if (!city) {
-    console.log(`  No se encontró la ciudad "${query}".`);
+    console.log(`  ${red(`No se encontró la ciudad "${query}".`)}`);
     return;
   }
 
@@ -86,50 +87,50 @@ async function searchAndAddCity(config: Config): Promise<void> {
 
   const exists = config.cities.some((c) => isSameCity(c, city));
   if (exists) {
-    console.log("  La ciudad ya estaba registrada.");
+    console.log(`  ${red("La ciudad ya estaba registrada.")}`);
     return;
   }
 
   config.cities.push(city);
   saveConfig(CONFIG_PATH, config);
-  console.log(`  Ciudad agregada. Total: ${config.cities.length}.`);
+  console.log(`  ${green(`Ciudad agregada. Total: ${config.cities.length}.`)}`);
 }
 
 async function removeCity(config: Config): Promise<void> {
   if (config.cities.length === 0) {
-    console.log("  No hay ciudades registradas.");
+    console.log(`  ${red("No hay ciudades registradas.")}`);
     return;
   }
 
   printCityList(config.cities);
-  const answer = await ask("  Número de la ciudad a eliminar: ");
+  const answer = await ask(`  ${cyan("Número de la ciudad a eliminar: ")}`);
   const index = parseIndex(answer, config.cities.length);
   if (index === null) {
-    console.log("  Número inválido.");
+    console.log(`  ${red("Número inválido.")}`);
     return;
   }
 
   const [removed] = config.cities.splice(index, 1);
   if (removed && config.defaultCity && isSameCity(removed, config.defaultCity)) {
     config.defaultCity = null;
-    console.log("  Se eliminó también la ciudad default.");
+    console.log(`  ${red("Se eliminó también la ciudad default.")}`);
   }
 
   saveConfig(CONFIG_PATH, config);
-  console.log(`  Ciudad eliminada. Total: ${config.cities.length}.`);
+  console.log(`  ${green(`Ciudad eliminada. Total: ${config.cities.length}.`)}`);
 }
 
 async function setDefaultCity(config: Config): Promise<void> {
   if (config.cities.length === 0) {
-    console.log("  No hay ciudades registradas. Usa la opción 3 para agregar una.");
+    console.log(`  ${red("No hay ciudades registradas. Usa la opción 3 para agregar una.")}`);
     return;
   }
 
   printCityList(config.cities);
-  const answer = await ask("  Número de la ciudad default: ");
+  const answer = await ask(`  ${cyan("Número de la ciudad default: ")}`);
   const index = parseIndex(answer, config.cities.length);
   if (index === null) {
-    console.log("  Número inválido.");
+    console.log(`  ${red("Número inválido.")}`);
     return;
   }
 
@@ -138,13 +139,13 @@ async function setDefaultCity(config: Config): Promise<void> {
 
   config.defaultCity = city;
   saveConfig(CONFIG_PATH, config);
-  console.log(`  Ciudad default: ${city.name}.`);
+  console.log(`  ${green(`Ciudad default: ${city.name}.`)}`);
 }
 
 function toggleUnit(config: Config): void {
   config.unit = config.unit === "celsius" ? "fahrenheit" : "celsius";
   saveConfig(CONFIG_PATH, config);
-  console.log(`  Unidad: ${config.unit === "celsius" ? "°C" : "°F"}.`);
+  console.log(`  ${green(`Unidad: ${config.unit === "celsius" ? "°C" : "°F"}.`)}`);
 }
 
 async function main(): Promise<void> {
@@ -155,7 +156,7 @@ async function main(): Promise<void> {
 
     let option: string;
     try {
-      option = await ask("  Selecciona una opción: ");
+      option = await ask(`  ${cyan("Selecciona una opción: ")}`);
     } catch (error) {
       if (error instanceof InputClosedError) return;
       throw error;
@@ -182,10 +183,10 @@ async function main(): Promise<void> {
           toggleUnit(config);
           break;
         case "9":
-          console.log("  ¡Hasta luego!");
+          console.log(`  ${green("¡Hasta luego!")}`);
           return;
         default:
-          console.log("  Opción no válida.");
+          console.log(`  ${red("Opción no válida.")}`);
       }
     } catch (error) {
       if (error instanceof InputClosedError) return;

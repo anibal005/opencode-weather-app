@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline/promises";
 import type { Interface } from "node:readline/promises";
 import type { City, Config, Unit } from "./types.ts";
+import { bold, cyan, red, yellow } from "./colors.ts";
 
 const rl: Interface = createInterface({
   input: process.stdin,
@@ -55,16 +56,16 @@ const LINE = "═".repeat(40);
 export function printMenu(config: Config): void {
   const unitLabel = config.unit === "celsius" ? "°C" : "°F";
   console.log(LINE);
-  console.log("         WEATHER CLI");
-  console.log(LINE);
-  console.log("  1. Clima de ciudad default");
-  console.log(`  2. Clima de todas las ciudades (${config.cities.length})`);
-  console.log("  3. Buscar y agregar ciudad");
-  console.log("  4. Eliminar ciudad");
-  console.log("  5. Establecer ciudad default");
-  console.log(`  8. Ajustes (${unitLabel})`);
-  console.log("  9. Salir");
-  console.log(LINE);
+  console.log(cyan("         WEATHER CLI"));
+  console.log(cyan(LINE));
+  console.log(`  ${cyan("1.")} Clima de ciudad default`);
+  console.log(`  ${cyan("2.")} Clima de todas las ciudades (${config.cities.length})`);
+  console.log(`  ${cyan("3.")} Buscar y agregar ciudad`);
+  console.log(`  ${cyan("4.")} Eliminar ciudad`);
+  console.log(`  ${cyan("5.")} Establecer ciudad default`);
+  console.log(`  ${cyan("8.")} Ajustes (${unitLabel})`);
+  console.log(`  ${cyan("9.")} Salir`);
+  console.log(cyan(LINE));
 }
 
 export function unitSymbol(unit: Unit): string {
@@ -80,7 +81,7 @@ function formatTemperature(value: number): string {
 }
 
 export function printTemperature(city: City, temperature: number, unit: Unit): void {
-  console.log(`  ${cityLabel(city)}: ${formatTemperature(temperature)}${unitSymbol(unit)}`);
+  console.log(`  ${cityLabel(city)}: ${yellow(`${formatTemperature(temperature)}${unitSymbol(unit)}`)}`);
 }
 
 export function printCityList(cities: City[]): void {
@@ -89,11 +90,11 @@ export function printCityList(cities: City[]): void {
     return;
   }
   cities.forEach((city, index) => {
-    console.log(`  ${index + 1}. ${cityLabel(city)}`);
+    console.log(`  ${cyan(String(index + 1))}. ${cityLabel(city)}`);
   });
 }
 
 export function printError(message: unknown): void {
   const text = message instanceof Error ? message.message : String(message);
-  console.log(`  Error: ${text}`);
+  console.log(`  ${red(`Error: ${text}`)}`);
 }
