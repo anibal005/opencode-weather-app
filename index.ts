@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { geocode, getTemperature } from "./src/api.ts";
+import { geocode, getForecast, getTemperature } from "./src/api.ts";
 import { loadConfig, saveConfig } from "./src/storage.ts";
 import {
   ask,
@@ -8,6 +8,7 @@ import {
   InputClosedError,
   printCityList,
   printError,
+  printForecast,
   printMenu,
   printTemperature,
 } from "./src/ui.ts";
@@ -63,6 +64,34 @@ async function showAllCities(config: Config): Promise<void> {
     try {
       const temperature = await getTemperature(city, config.unit);
       printTemperature(city, temperature, config.unit);
+    } catch (error) {
+      printError(error);
+    }
+  }
+}
+
+async function showDefaultForecast(config: Config): Promise<void> {
+  if (!config.defaultCity) {
+    console.log(`  ${red("No hay ciudad default. Usa la opción 5 para establecer una.")}`);
+    return;
+  }
+  try {
+    const forecast = await getForecast(config.defaultCity, config.unit);
+    printForecast(config.defaultCity, forecast, config.unit);
+  } catch (error) {
+    printError(error);
+  }
+}
+
+async function showAllForecasts(config: Config): Promise<void> {
+  if (config.cities.length === 0) {
+    console.log(`  ${red("No hay ciudades registradas. Usa la opción 3 para agregar una.")}`);
+    return;
+  }
+  for (const city of config.cities) {
+    try {
+      const forecast = await getForecast(city, config.unit);
+      printForecast(city, forecast, config.unit);
     } catch (error) {
       printError(error);
     }
@@ -178,6 +207,12 @@ async function main(): Promise<void> {
           break;
         case "5":
           await setDefaultCity(config);
+          break;
+        case "6":
+          await showDefaultForecast(config);
+          break;
+        case "7":
+          await showAllForecasts(config);
           break;
         case "8":
           toggleUnit(config);

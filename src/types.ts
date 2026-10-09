@@ -7,6 +7,13 @@ export interface City {
   country?: string;
 }
 
+export interface DailyForecast {
+  /** Fecha local de la ciudad en formato "YYYY-MM-DD". */
+  date: string;
+  tempMax: number;
+  tempMin: number;
+}
+
 export interface Config {
   cities: City[];
   defaultCity: City | null;

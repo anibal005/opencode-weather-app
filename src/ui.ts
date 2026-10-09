@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline/promises";
 import type { Interface } from "node:readline/promises";
-import type { City, Config, Unit } from "./types.ts";
-import { bold, cyan, red, yellow } from "./colors.ts";
+import type { City, Config, DailyForecast, Unit } from "./types.ts";
+import { bold, cyan, gray, red, yellow } from "./colors.ts";
 
 const rl: Interface = createInterface({
   input: process.stdin,
@@ -63,6 +63,8 @@ export function printMenu(config: Config): void {
   console.log(`  ${cyan("3.")} Buscar y agregar ciudad`);
   console.log(`  ${cyan("4.")} Eliminar ciudad`);
   console.log(`  ${cyan("5.")} Establecer ciudad default`);
+  console.log(`  ${cyan("6.")} Pronóstico 7 días (ciudad default)`);
+  console.log(`  ${cyan("7.")} Pronóstico 7 días (todas las ciudades)`);
   console.log(`  ${cyan("8.")} Ajustes (${unitLabel})`);
   console.log(`  ${cyan("9.")} Salir`);
   console.log(cyan(LINE));
@@ -82,6 +84,27 @@ function formatTemperature(value: number): string {
 
 export function printTemperature(city: City, temperature: number, unit: Unit): void {
   console.log(`  ${cityLabel(city)}: ${yellow(`${formatTemperature(temperature)}${unitSymbol(unit)}`)}`);
+}
+
+/** Formatea "YYYY-MM-DD" como "mié 08/10" en español. */
+function formatDay(date: string): string {
+  const parsed = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleDateString("es-ES", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
+export function printForecast(city: City, forecast: DailyForecast[], unit: Unit): void {
+  console.log(`  ${bold(cityLabel(city))} ${gray("— próximos 7 días")}`);
+  for (const day of forecast) {
+    const label = formatDay(day.date).padEnd(12);
+    const max = `▲ ${formatTemperature(day.tempMax)}${unitSymbol(unit)}`;
+    const min = `▼ ${formatTemperature(day.tempMin)}${unitSymbol(unit)}`;
+    console.log(`    ${gray(label)}${yellow(max)}  ${yellow(min)}`);
+  }
 }
 
 export function printCityList(cities: City[]): void {

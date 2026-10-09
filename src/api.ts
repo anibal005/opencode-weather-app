@@ -1,4 +1,4 @@
-import type { City, Unit } from "./types.ts";
+import type { City, DailyForecast, Unit } from "./types.ts";
 
 interface GeocodingResult {
   name: string;
@@ -15,6 +15,14 @@ interface GeocodingResponse {
 interface ForecastResponse {
   current?: {
     temperature_2m?: number;
+  };
+}
+
+interface DailyForecastResponse {
+  daily?: {
+    time?: string[];
+    temperature_2m_max?: number[];
+    temperature_2m_min?: number[];
   };
 }
 
@@ -61,4 +69,47 @@ export async function getTemperature(city: City, unit: Unit): Promise<number> {
   }
 
   return temperature;
+}
+
+/** Paso 2 (variante): obtiene el pronóstico diario de los próximos 7 días. */
+export async function getForecast(city: City, unit: Unit): Promise<DailyForecast[]> {
+  const params = new URLSearchParams({
+    latitude: String(city.latitude),
+    longitude: String(city.longitude),
+    daily: "temperature_2m_max,temperature_2m_min",
+    forecast_days: "7",
+    timezone: "auto",
+    temperature_unit: unit,
+  });
+
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+  if (!res.ok) {
+    throw new Error(`OpenMeteo API respondió ${res.status}`);
+  }
+
+  const data = (await res.json()) as DailyForecastResponse;
+  const dates = data.daily?.time ?? [];
+  const maxes = data.daily?.temperature_2m_max ?? [];
+  const mins = data.daily?.temperature_2m_min ?? [];
+
+  const forecast: DailyForecast[] = [];
+  for (let i = 0; i < dates.length; i++) {
+    const date = dates[i];
+    const tempMax = maxes[i];
+    const tempMin = mins[i];
+    if (
+      typeof date !== "string" ||
+      typeof tempMax !== "number" ||
+      typeof tempMin !== "number"
+    ) {
+      continue;
+    }
+    forecast.push({ date, tempMax, tempMin });
+  }
+
+  if (forecast.length === 0) {
+    throw new Error("OpenMeteo devolvió una respuesta inesperada");
+  }
+
+  return forecast;
 }
