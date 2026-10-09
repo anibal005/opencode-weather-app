@@ -1,0 +1,86 @@
+name: Release
+
+# Se ejecuta en cada push a main y tambien de forma manual.
+# Crea un tag a partir de la version de package.json y publica los binarios.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permiso interno del runner para escribir tags y releases en este repo.
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Leer version desde package.json
+        id: version
+        run: |
+          VERSION="$(jq -r '.version' package.json)"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "package.json no tiene un campo version valido." >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verificar si el tag ya existe
+        id: check
+        run: |
+          if git ls-remote --tags origin "refs/tags/${{ steps.version.outputs.tag }}" | grep -q .; then
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Omitir (tag ya existe)
+        if: steps.check.outputs.existe == 'true'
+        run: echo "El tag ${{ steps.version.outputs.tag }} ya existe. No se crea un release nuevo."
+
+      - name: Setup Bun
+        if: steps.check.outputs.existe == 'false'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Instalar dependencias
+        if: steps.check.outputs.existe == 'false'
+        run: bun install --frozen-lockfile
+
+      - name: Gate (typecheck + tests)
+        if: steps.check.outputs.existe == 'false'
+        run: bun run typecheck && bun test --isolate
+
+      - name: Cross-compile de binarios
+        if: steps.check.outputs.existe == 'false'
+        run: |
+          mkdir -p dist
+          bun build --compile --target=bun-windows-x64 src/index.ts --outfile dist/weather-windows-x64.exe
+          bun build --compile --target=bun-linux-x64   src/index.ts --outfile dist/weather-linux-x64
+          bun build --compile --target=bun-darwin-arm64 src/index.ts --outfile dist/weather-darwin-arm64
+          bun build --compile --target=bun-darwin-x64  src/index.ts --outfile dist/weather-darwin-x64
+          ls -lh dist
+
+      - name: Crear tag y release con los binarios
+        if: steps.check.outputs.existe == 'false'
+        env:
+          # Token efimero que GitHub genera e inyecta automaticamente en cada
+          # ejecucion. No es un secreto externo ni requiere configuracion manual:
+          # es el mecanismo nativo de GitHub para escribir en el propio repo.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" dist/* \
+            --target "${{ github.sha }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes
