@@ -9,13 +9,17 @@ The spec lives in `README.md` and is written in Spanish: interactive console men
 ## Commands
 
 ```bash
-bun run src/index.ts   # run the app
-bun install            # deps (bun.lock is the lockfile; do not regenerate with npm)
-bunx tsc               # typecheck — tsconfig has noEmit: true
-bun build --compile src/index.ts --outfile weather   # standalone binary (project's end goal)
+bun run src/index.ts       # run the app
+bun install                # deps (bun.lock is the lockfile; do not regenerate with npm)
+bunx tsc                   # typecheck — tsconfig has noEmit: true
+bun test --isolate         # automated tests (bun:test), all under tests/
+bun test --isolate --coverage   # same + coverage
+bun run build              # typecheck && test && bun build --compile ... (project's end goal)
 ```
 
-There is **no** test runner, linter, formatter, or CI configured. Don't invent `bun test`/`bun lint` steps; typecheck via `bunx tsc` is the only automated verification available.
+`bun run build` is the gate: it runs `bunx tsc`, then the test suite, and only compiles the standalone binary (`src/index.ts` → `weather`) if both pass. Do not build the binary when tests fail.
+
+There is **no** linter, formatter, or CI configured. Automated verification is typecheck (`bunx tsc`) plus the test suite (`bun test`). Tests live in `tests/` mirroring `src/` (`utils/`, `presentation/`, `storage/`, `api/`, `actions/`, `integration/`) with shared helpers in `tests/helpers/`. Actions that read stdin are tested by mocking `src/presentation/input.ts` with Bun's `mock.module`; APIs are tested by stubbing `globalThis.fetch`; storage is tested against temp dirs. The E2E test copies `src/` + `package.json` to a temp dir so `resolveDataDir()` keeps real project data untouched.
 
 ## API usage (from README)
 
