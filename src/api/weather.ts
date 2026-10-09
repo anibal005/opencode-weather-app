@@ -1,16 +1,7 @@
-import type { City, DailyForecast, Unit } from "./types.ts";
-
-interface GeocodingResult {
-  name: string;
-  latitude: number;
-  longitude: number;
-  country?: string;
-  admin1?: string;
-}
-
-interface GeocodingResponse {
-  results?: GeocodingResult[];
-}
+import type { City } from "../types/City.ts";
+import type { DailyForecast } from "../types/Weather.ts";
+import type { Unit } from "../types/Unit.ts";
+import { FORECAST_BASE_URL, FORECAST_DAYS } from "../utils/constants.ts";
 
 interface ForecastResponse {
   current?: {
@@ -26,28 +17,6 @@ interface DailyForecastResponse {
   };
 }
 
-/** Paso 1: busca la ciudad y devuelve sus coordenadas. */
-export async function geocode(query: string): Promise<City | null> {
-  const url =
-    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=es&format=json`;
-
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Geocoding API respondió ${res.status}`);
-  }
-
-  const data = (await res.json()) as GeocodingResponse;
-  const result = data.results?.[0];
-  if (!result) return null;
-
-  return {
-    name: result.name,
-    latitude: result.latitude,
-    longitude: result.longitude,
-    country: result.country ?? result.admin1 ?? undefined,
-  };
-}
-
 /** Paso 2: obtiene la temperatura actual para unas coordenadas. */
 export async function getTemperature(city: City, unit: Unit): Promise<number> {
   const params = new URLSearchParams({
@@ -57,7 +26,7 @@ export async function getTemperature(city: City, unit: Unit): Promise<number> {
     temperature_unit: unit,
   });
 
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+  const res = await fetch(`${FORECAST_BASE_URL}?${params}`);
   if (!res.ok) {
     throw new Error(`OpenMeteo API respondió ${res.status}`);
   }
@@ -77,12 +46,12 @@ export async function getForecast(city: City, unit: Unit): Promise<DailyForecast
     latitude: String(city.latitude),
     longitude: String(city.longitude),
     daily: "temperature_2m_max,temperature_2m_min",
-    forecast_days: "7",
+    forecast_days: FORECAST_DAYS,
     timezone: "auto",
     temperature_unit: unit,
   });
 
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+  const res = await fetch(`${FORECAST_BASE_URL}?${params}`);
   if (!res.ok) {
     throw new Error(`OpenMeteo API respondió ${res.status}`);
   }

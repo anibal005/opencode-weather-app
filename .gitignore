@@ -12,6 +12,8 @@ dist
 # weather cli
 weather.exe
 weather.config.json
+cities.json
+settings.json
 
 # code coverage
 coverage

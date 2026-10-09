@@ -2,17 +2,17 @@
 
 ## Project
 
-Weather CLI in TypeScript, run on **Bun** (not Node). Single entrypoint: `index.ts`, currently just the `bun init` scaffold (`console.log("Hello via Bun!")`).
+Weather CLI in TypeScript, run on **Bun** (not Node). Single entrypoint: `src/index.ts` (the CLI menu loop). Source is organized under `src/`: `actions/` (user operations), `presentation/` (menu, input, output), `storage/` (persistence), `types/` (shared contracts), `api/` (OpenMeteo), `utils/` (format, colors, constants).
 
 The spec lives in `README.md` and is written in Spanish: interactive console menu (default city, list of saved cities, add/remove city, set default, °C settings, exit), final goal is shipping an executable binary. UI strings and README are in Spanish — keep new user-facing text consistent with that.
 
 ## Commands
 
 ```bash
-bun run index.ts   # run the app (bun index.ts also works)
-bun install        # deps (bun.lock is the lockfile; do not regenerate with npm)
-bunx tsc           # typecheck — tsconfig has noEmit: true
-bun build index.ts --compile   # produce a standalone binary (the project's end goal)
+bun run src/index.ts   # run the app
+bun install            # deps (bun.lock is the lockfile; do not regenerate with npm)
+bunx tsc               # typecheck — tsconfig has noEmit: true
+bun build --compile src/index.ts --outfile weather   # standalone binary (project's end goal)
 ```
 
 There is **no** test runner, linter, formatter, or CI configured. Don't invent `bun test`/`bun lint` steps; typecheck via `bunx tsc` is the only automated verification available.
